@@ -41,8 +41,9 @@ function SlackLoginButton() {
     const handleLogin = () => {
         const params = new URLSearchParams({
             client_id: process.env.NEXT_PUBLIC_SLACK_CLIENT_ID!,
-            scope: "im:history,mpim:history,channels:history,groups:history,users:read",
             redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/slack/callback`,
+            scope: "users:read",
+            user_scope: "im:history,mpim:history,channels:history,groups:history"
         });
 
         window.location.href =
@@ -50,8 +51,11 @@ function SlackLoginButton() {
     };
 
     return (
-        <button className="border-2 text-2xl text-purple-500 px-4 py-2 cursor-pointer  border-dashed border-neutral-800 " onClick={handleLogin}>
-            Login with Slack
+        <button className="border-2 text-2xl text-purple-300 px-4 py-2 cursor-pointer  border-dashed border-neutral-800 " onClick={handleLogin}>
+            Connect Slack
         </button>
     )
+
+
 }
+

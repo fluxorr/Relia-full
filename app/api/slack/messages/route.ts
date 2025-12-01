@@ -14,6 +14,9 @@ export async function GET() {
         { headers }
     ).then(r => r.json());
 
+    console.log("CONVO RESPONSE:", JSON.stringify(convoList, null, 2));
+
+
     if (!convoList.channels) return NextResponse.json([]);
 
     let messages: unknown[] = [];
