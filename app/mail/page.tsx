@@ -2,7 +2,7 @@ import axios from "axios";
 
 
 async function getMails() {
-    const response = await axios.get('http://localhost:3000/api/gmail/messages')
+    const response = await axios.get('https://localhost:3000/api/gmail/messages')
     return response.data
 }
 
