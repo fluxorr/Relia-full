@@ -46,3 +46,9 @@ dev.db
 
 
 tokens.json
+
+
+/certificates/*
+/certificates
+certificates
+certificates/

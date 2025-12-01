@@ -33,6 +33,6 @@ export async function GET(request: Request) {
         expiryDate: expiry.toISOString(),
     });
 
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/`);
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/mail`);
 
 }
