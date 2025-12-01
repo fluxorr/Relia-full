@@ -51,12 +51,33 @@ async function fetchGmail(accessToken: string) {
 async function fetchSlack(token: string) {
     const headers = { Authorization: `Bearer ${token}` };
 
+    // list all direct and group conversations
     const convoList = await fetch(
-        "https://slack.com/api/conversations.list?types=im,mpim,private_channel,public_channel",
+        "https://slack.com/api/conversations.list?types=im,mpim",
         { headers }
     ).then(r => r.json());
 
     if (!convoList.channels) return [];
+
+    const usersCache: Record<string, string> = {};
+
+    async function getUserName(id: string) {
+        if (usersCache[id]) return usersCache[id];
+
+        const userRes = await fetch(
+            `https://slack.com/api/users.info?user=${id}`,
+            { headers }
+        ).then(r => r.json());
+
+        const name =
+            userRes.user?.real_name ||
+            userRes.user?.name ||
+            userRes.user?.profile?.display_name ||
+            id;
+
+        usersCache[id] = name;
+        return name;
+    }
 
     let messages: any[] = [];
 
@@ -68,19 +89,23 @@ async function fetchSlack(token: string) {
 
         if (!hist.messages) continue;
 
-        messages.push(
-            ...hist.messages
-                .filter((m: any) => Number(m.ts) * 1000 > dayjs().subtract(1, "day").valueOf())
-                .map((m: any) => ({
+        for (const m of hist.messages) {
+            const tsDate = new Date(Number(m.ts) * 1000);
+
+            // recent only
+            if (Date.now() - tsDate.getTime() <= 1000 * 60 * 60 * 24) {
+                messages.push({
                     text: m.text,
-                    user: m.user,
-                    date: new Date(Number(m.ts) * 1000).toISOString(),
-                }))
-        );
+                    from: await getUserName(m.user),
+                    date: tsDate.toISOString(),
+                });
+            }
+        }
     }
 
     return messages;
 }
+
 
 export async function GET() {
     const tokens = loadTokens();
