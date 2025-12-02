@@ -16,6 +16,17 @@ export default function MorningPage() {
     return (
         <div className="p-8 space-y-12">
             <h1 className="text-5xl font-bold">Morning Brief</h1>
+            <h1 className="text-3xl font-bold mb-4">Morning Brief</h1>
+
+            {data.summary && (
+                <div className="mb-8 p-4 bg-zinc-900 border border-neutral-500/40 border-dashed rounded-lg shadow-sm">
+                    <h2 className="text-lg font-semibold mb-2">Summary</h2>
+                    <p className="whitespace-pre-line text-sm leading-relaxed">
+                        {data.summary}
+                    </p>
+                </div>
+            )}
+
 
             {/* Gmail Section */}
             <section>

@@ -107,6 +107,56 @@ async function fetchSlack(token: string) {
 }
 
 
+async function summarizeBriefWithOpenRouter(data: any) {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            // Optional but recommended by OpenRouter:
+            "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "",
+            "X-Title": "Relia Morning Brief"
+        },
+        body: JSON.stringify({
+            model: "arcee-ai/trinity-mini:free",
+            reasoning: { enabled: true },
+            messages: [
+                {
+                    role: "system",
+                    content: `
+                        You are a personal chief-of-staff AI for Rahul.
+                        You get two arrays: gmail[] and slack[].
+
+                        Each gmail item: { subject, from, date, body }
+                        Each slack item: { text, from, date }.
+
+                        Produce a tight 2-3 minute morning brief with:
+                        - Top 3-7 priorities
+                        - Action items (things Rahul must do or reply to)
+                        - Time-sensitive stuff (deadlines, trials, security alerts)
+                        - Short summary of any Slack chatter that matters.
+
+                        Avoid marketing spam and generic newsletters as “important” unless they clearly require action.
+                        Use headings and bullet points. Keep it concise.`
+                },
+                {
+                    role: "user",
+                    content: JSON.stringify(data)
+                }
+            ]
+        })
+    });
+
+    const json = await res.json();
+    if (!json.choices || !json.choices[0]?.message?.content) {
+        console.error("OpenRouter summary error:", json);
+        return "Could not generate summary.";
+    }
+
+    return json.choices[0].message.content as string;
+}
+
+
 export async function GET() {
     const tokens = loadTokens();
     if (!tokens) return NextResponse.json({ error: "Not connected" });
@@ -114,5 +164,12 @@ export async function GET() {
     const gmail = tokens.accessToken ? await fetchGmail(tokens.accessToken) : [];
     const slack = tokens.slackToken ? await fetchSlack(tokens.slackToken) : [];
 
-    return NextResponse.json({ gmail, slack });
+    const summary = await summarizeBriefWithOpenRouter({ gmail, slack });
+
+    return NextResponse.json({
+        summary,
+        gmail,
+        slack,
+    });
+
 }
