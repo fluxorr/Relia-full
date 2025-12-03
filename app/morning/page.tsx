@@ -16,7 +16,21 @@ export default function MorningPage() {
     return (
         <div className="p-8 space-y-12">
             <h1 className="text-5xl font-bold">Morning Brief</h1>
-            <h1 className="text-3xl font-bold mb-4">Morning Brief</h1>
+            {data.actionItems?.length > 0 && (
+                <section className="mb-8">
+                    <h2 className="text-xl font-semibold mb-2">🔥 Today&apos;s Action Plan</h2>
+                    <div className="space-y-3">
+                        {data.actionItems.map((item: any, i: number) => (
+                            <div key={i} className="p-3 rounded-lg bg-zinc-900 border border-red-400/60 border-dashed">
+                                <p className="font-medium">{item.text}</p>
+                                <p className="text-sm text-gray-600">From: {item.from}</p>
+                                {item.due && <p className="text-xs text-red-500">Due: {item.due}</p>}
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
+
 
             {data.summary && (
                 <div className="mb-8 p-4 bg-zinc-900 border border-neutral-500/40 border-dashed rounded-lg shadow-sm">
@@ -57,6 +71,14 @@ export default function MorningPage() {
                         </div>
                     ))}
                 </div>
+            </section>
+            <section className="justify-center flex items-center ">
+                <button
+                    onClick={() => fetch("/api/morning-brief/send-email")}
+                    className="px-4 h-20 w-60 py-2 bg-zinc-600 text-zinc-300 border-2 border-dashed border-amber-100/40 rounded text-lg font-mono tracking-tighter cursor-pointer"
+                >
+                    Email me this summary
+                </button>
             </section>
         </div>
     );

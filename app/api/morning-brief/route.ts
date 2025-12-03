@@ -113,7 +113,6 @@ async function summarizeBriefWithOpenRouter(data: any) {
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            // Optional but recommended by OpenRouter:
             "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "",
             "X-Title": "Relia Morning Brief"
         },
@@ -124,20 +123,35 @@ async function summarizeBriefWithOpenRouter(data: any) {
                 {
                     role: "system",
                     content: `
-                        You are a personal chief-of-staff AI for Rahul.
-                        You get two arrays: gmail[] and slack[].
+                You are a personal chief-of-staff for me.
 
-                        Each gmail item: { subject, from, date, body }
-                        Each slack item: { text, from, date }.
+                Input:
+                {
+                gmail: [ { subject, from, date, body } ],
+                slack: [ { text, from, date } ]
+                }
 
-                        Produce a tight 2-3 minute morning brief with:
-                        - Top 3-7 priorities
-                        - Action items (things Rahul must do or reply to)
-                        - Time-sensitive stuff (deadlines, trials, security alerts)
-                        - Short summary of any Slack chatter that matters.
+                Output JSON with:
+                {
+                "summary": "...",
+                "actionItems": [
+                    {
+                    "text": "what me should do",
+                    "source": "gmail" | "slack",
+                    "from": "sender name",
+                    "priority": "high" | "medium" | "low",
+                    "due": "yyyy-mm-dd" | null
+                    }
+                ]
+                }
 
-                        Avoid marketing spam and generic newsletters as “important” unless they clearly require action.
-                        Use headings and bullet points. Keep it concise.`
+                Rules:
+                - Prioritize human asks and deadlines
+                - Ignore promo / marketing unless clearly requiring action
+                - Slack join/leave/system messages → ignore
+                - If something is time-sensitive → mark high priority
+                - Keep it concise
+                `
                 },
                 {
                     role: "user",
@@ -148,13 +162,16 @@ async function summarizeBriefWithOpenRouter(data: any) {
     });
 
     const json = await res.json();
-    if (!json.choices || !json.choices[0]?.message?.content) {
-        console.error("OpenRouter summary error:", json);
-        return "Could not generate summary.";
-    }
+    let result = json.choices?.[0]?.message?.content || "";
 
-    return json.choices[0].message.content as string;
+    try {
+        return JSON.parse(result);
+    } catch (err) {
+        console.error("Summary JSON parse failed:", result);
+        return { summary: result, actionItems: [] };
+    }
 }
+
 
 
 export async function GET() {
@@ -164,12 +181,14 @@ export async function GET() {
     const gmail = tokens.accessToken ? await fetchGmail(tokens.accessToken) : [];
     const slack = tokens.slackToken ? await fetchSlack(tokens.slackToken) : [];
 
-    const summary = await summarizeBriefWithOpenRouter({ gmail, slack });
+    const { summary, actionItems } = await summarizeBriefWithOpenRouter({ gmail, slack });
 
     return NextResponse.json({
         summary,
+        actionItems,
         gmail,
-        slack,
+        slack
     });
+
 
 }
